@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -23,6 +24,10 @@ public class PlayerController : MonoBehaviour
 
   [SerializeField] private float _jumpCooldown;
 
+  [SerializeField] private float _airMultiplier;
+
+  [SerializeField] private float _airDrag;
+
   [Header("Ground Check Settings")]
 
   [SerializeField] private float _playerHeight;
@@ -39,6 +44,8 @@ public class PlayerController : MonoBehaviour
 
   [SerializeField] private float _slideDrag;
 
+  private StateController _stateController;
+
   private Rigidbody _playerRigidbody;
 
   private float _horizonalInput, _verticalInput;
@@ -48,6 +55,7 @@ public class PlayerController : MonoBehaviour
   private bool _isSliding;
   private void Awake()
   {
+    _stateController = GetComponent<StateController>();
     _playerRigidbody = GetComponent<Rigidbody>();
     _playerRigidbody.freezeRotation = true;
   }
@@ -55,6 +63,7 @@ public class PlayerController : MonoBehaviour
   private void Update()
   {
     SetInputs();
+    SetStates();
     SetPlayerDrag();
     LimitPlayerSpeed();
   }
@@ -89,23 +98,63 @@ public class PlayerController : MonoBehaviour
     }
   }
 
+  public void SetStates()
+  {
+    var issliding = IsSliding();
+    var movementDirection = GetMovementDirection();
+    var isGrounded = IsGround();
+    var currentState = _stateController.GetCurrentState();
+
+    var newState = currentState switch
+    {
+      _ when movementDirection == Vector3.zero && isGrounded && !issliding => PlayerState.Idle,
+      _ when movementDirection != Vector3.zero && isGrounded && !issliding => PlayerState.Move,
+      _ when movementDirection != Vector3.zero && isGrounded && issliding => PlayerState.Slide,
+      _ when movementDirection == Vector3.zero && isGrounded && issliding => PlayerState.SlideIdle,
+      _ when !_canjump && !isGrounded => PlayerState.Jump,
+      _ => currentState,
+    };
+
+    if (newState != currentState)
+    {
+      _stateController.ChangeState(newState);
+    }
+
+    Debug.Log(newState);
+  }
+
   private void SetPlayerMovement()
   {
     _movementDirection = _orientationTransform.forward * _verticalInput + _orientationTransform.right * _horizonalInput;
 
-    if (_isSliding)
+    float forceMultiplier = _stateController.GetCurrentState() switch
     {
-      _playerRigidbody.AddForce(_movementDirection.normalized * _movementSpeed * _slideMultiplier, ForceMode.Force);
-    }
-    else
-    {
-      _playerRigidbody.AddForce(_movementDirection.normalized * _movementSpeed, ForceMode.Force);
+      PlayerState.Move => 1f,
+      PlayerState.Slide => _slideMultiplier,
+      PlayerState.Jump => _airMultiplier,
+      _ => 1f,
+    };
 
-    }
+    _playerRigidbody.AddForce(_movementDirection.normalized * _movementSpeed * forceMultiplier, ForceMode.Force);
+
+
+
   }
 
   private void SetPlayerDrag()
   {
+
+    _playerRigidbody.linearDamping = _stateController.GetCurrentState() switch
+    {
+      PlayerState.Move => _groundDrag,
+      PlayerState.Slide => _slideDrag,
+      PlayerState.Jump => _airDrag,
+      _ => _playerRigidbody.linearDamping,
+
+
+
+    };
+
     if (_isSliding)
     {
       _playerRigidbody.linearDamping = _slideDrag;
@@ -118,12 +167,12 @@ public class PlayerController : MonoBehaviour
 
   private void LimitPlayerSpeed()
   {
-    Vector3 flatVelocity = new Vector3(_playerRigidbody.linearVelocity.x,0f,_playerRigidbody.linearVelocity.z);
-    if(flatVelocity.magnitude > _movementSpeed)
+    Vector3 flatVelocity = new Vector3(_playerRigidbody.linearVelocity.x, 0f, _playerRigidbody.linearVelocity.z);
+    if (flatVelocity.magnitude > _movementSpeed)
     {
       Vector3 limitedVelocity = flatVelocity.normalized * _movementSpeed;
-      _playerRigidbody.linearVelocity = new Vector3(limitedVelocity.x,_playerRigidbody.linearVelocity.y, limitedVelocity.z);
-    } 
+      _playerRigidbody.linearVelocity = new Vector3(limitedVelocity.x, _playerRigidbody.linearVelocity.y, limitedVelocity.z);
+    }
   }
 
   private void SetJumping()
@@ -140,5 +189,15 @@ public class PlayerController : MonoBehaviour
   private bool IsGround()
   {
     return Physics.Raycast(transform.position, Vector3.down, _playerHeight * 0.5f + 0.2f, _grounLayer);
+  }
+
+  private Vector3 GetMovementDirection()
+  {
+    return _movementDirection.normalized;
+  }
+
+  private bool IsSliding()
+  {
+    return _isSliding;
   }
 }
