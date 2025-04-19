@@ -6,6 +6,8 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
+  public event Action OnPlayerJumped;
+
   [Header("Referances")]
   [SerializeField] private Transform _orientationTransform;
 
@@ -48,6 +50,7 @@ public class PlayerController : MonoBehaviour
 
   private Rigidbody _playerRigidbody;
 
+  private float _startingMovementSpeed, _startingJumpForce;
   private float _horizonalInput, _verticalInput;
 
   private Vector3 _movementDirection;
@@ -58,6 +61,9 @@ public class PlayerController : MonoBehaviour
     _stateController = GetComponent<StateController>();
     _playerRigidbody = GetComponent<Rigidbody>();
     _playerRigidbody.freezeRotation = true;
+
+    _startingMovementSpeed = _movementSpeed;
+    _startingJumpForce = _jumpForce;
   }
 
   private void Update()
@@ -149,10 +155,7 @@ public class PlayerController : MonoBehaviour
       PlayerState.Move => _groundDrag,
       PlayerState.Slide => _slideDrag,
       PlayerState.Jump => _airDrag,
-      _ => _playerRigidbody.linearDamping,
-
-
-
+      _ => _playerRigidbody.linearDamping
     };
 
     if (_isSliding)
@@ -177,6 +180,7 @@ public class PlayerController : MonoBehaviour
 
   private void SetJumping()
   {
+    OnPlayerJumped?.Invoke();
     _playerRigidbody.linearVelocity = new Vector3(_playerRigidbody.linearVelocity.x, 0f, _playerRigidbody.linearVelocity.z);
     _playerRigidbody.AddForce(transform.up * _jumpForce, ForceMode.Impulse);
   }
@@ -200,4 +204,28 @@ public class PlayerController : MonoBehaviour
   {
     return _isSliding;
   }
+
+  public void SetMovementSpeed(float speed,float duration)
+  {
+    _movementSpeed += speed;
+    Invoke(nameof(ResetMovementSpeed),duration);
+  }
+
+  private void ResetMovementSpeed()
+  {
+    _movementSpeed = _startingMovementSpeed;
+  }
+
+  public void SetJumpForce(float force,float duration)
+  {
+    _jumpForce += force;
+    Invoke(nameof(ResetJumpForce),duration);
+
+  }
+
+  private void ResetJumpForce()
+  {
+    _jumpForce = _startingJumpForce;
+  }
+
 }
