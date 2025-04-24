@@ -8,6 +8,8 @@ public class PlayerController : MonoBehaviour
 {
   public event Action OnPlayerJumped;
 
+  public event Action<PlayerState> OnPlayerStateChanged;
+
   [Header("Referances")]
   [SerializeField] private Transform _orientationTransform;
 
@@ -48,7 +50,7 @@ public class PlayerController : MonoBehaviour
 
   private StateController _stateController;
 
-  private Rigidbody _playerRigidbody;
+  public Rigidbody _playerRigidbody;
 
   private float _startingMovementSpeed, _startingJumpForce;
   private float _horizonalInput, _verticalInput;
@@ -124,6 +126,7 @@ public class PlayerController : MonoBehaviour
     if (newState != currentState)
     {
       _stateController.ChangeState(newState);
+      OnPlayerStateChanged?.Invoke(newState);
     }
 
     Debug.Log(newState);
@@ -205,10 +208,10 @@ public class PlayerController : MonoBehaviour
     return _isSliding;
   }
 
-  public void SetMovementSpeed(float speed,float duration)
+  public void SetMovementSpeed(float speed, float duration)
   {
     _movementSpeed += speed;
-    Invoke(nameof(ResetMovementSpeed),duration);
+    Invoke(nameof(ResetMovementSpeed), duration);
   }
 
   private void ResetMovementSpeed()
@@ -216,10 +219,10 @@ public class PlayerController : MonoBehaviour
     _movementSpeed = _startingMovementSpeed;
   }
 
-  public void SetJumpForce(float force,float duration)
+  public void SetJumpForce(float force, float duration)
   {
     _jumpForce += force;
-    Invoke(nameof(ResetJumpForce),duration);
+    Invoke(nameof(ResetJumpForce), duration);
 
   }
 

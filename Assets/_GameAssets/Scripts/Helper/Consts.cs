@@ -1,25 +1,30 @@
 
-public class Consts 
+public class Consts
 {
     public struct PlayerAnimations
     {
-        public const string IS_MOVİNG = "IsMoving" ;
+        public const string IS_MOVİNG = "IsMoving";
 
-        public const string IS_JUMGİNG = "IsJumping" ;
+        public const string IS_JUMGİNG = "IsJumping";
 
-        public const string IS_SLİDİNG = "IsSliding" ;
+        public const string IS_SLİDİNG = "IsSliding";
 
-        public const string IS_SLİDİNG_ACTIVE = "IsSlidingActive" ;
+        public const string IS_SLİDİNG_ACTIVE = "IsSlidingActive";
 
+    }
+
+    public struct OtherAnimations
+    {
+        public const string IS_SPATULA_JUMPİNG = "IsSpatulaJumping";
     }
 
     public struct WheatTypes
     {
-        public const string GOLD_WHEATE = "GoldWheat" ;
+        public const string GOLD_WHEATE = "GoldWheat";
 
-        public const string ROTTEN_WHEATE = "RottenWheat" ;
+        public const string ROTTEN_WHEATE = "RottenWheat";
 
-        public const string HOLY_WHEATE = "HolyWheat" ;
+        public const string HOLY_WHEATE = "HolyWheat";
 
 
 
